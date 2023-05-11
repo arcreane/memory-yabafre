@@ -1,6 +1,7 @@
 package com.example.memorygame;
 
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
@@ -18,10 +19,12 @@ public class GameController implements CardSelectionListener {
     private final ScoreBoard scoreBoard;
     private final GridPane gameBoard;
     private final MainController mainController;
-    private Card selectedCard = null;
+    private Card selectedCard1 = null;
+    private Card selectedCard2 = null;
     private final List<Card> cards;
+    private final List<Card> player1Hand = new ArrayList<>();
+    private final List<Card> player2Hand = new ArrayList<>();
     private boolean isPlayer1Turn;
-    private PauseTransition pause;
 
 
     public GameController(String player1Name, String player2Name, Theme theme, Difficulty difficulty, MainController mainController) {
@@ -75,65 +78,48 @@ public class GameController implements CardSelectionListener {
 
     @Override
     public void onCardSelected(Card card) {
-        selectCard(card);
-    }
-    public void selectCard(Card card) {
-        if (card == selectedCard) {
-            return;  // Do nothing if the same card is selected twice
-        }
+        if (selectedCard1 == null) {
+            selectedCard1 = card;
+            selectedCard1.flip();
+        } else if (selectedCard2 == null) {
+            selectedCard2 = card;
+            selectedCard2.flip();
 
-        if (selectedCard == null) {
-            selectedCard = card;
-            selectedCard.flip();  // Flip the card when it is selected
-
-            // Create a pause transition of 3 seconds
-            pause = new PauseTransition(Duration.seconds(3));
-
-            // Set what to do after the pause
-            pause.setOnFinished(event -> {
-                // If no second card has been selected, flip the first card back over
-                if (selectedCard != null) {
-                    selectedCard.flip();
-                    selectedCard = null;
-                }
-            });
-
-            // Start the pause
+            // Adding a delay of 5 seconds before proceeding with the game
+            PauseTransition pause = new PauseTransition(Duration.seconds(5));
+            pause.setOnFinished(event -> processCardSelection());
             pause.play();
-        } else {
-            // If the second card is selected before the pause is over, stop the pause
-            if (pause != null) {
-                pause.stop();
-            }
-
-            if (cardsMatch(selectedCard, card)) {
-                scoreCurrentPlayer();
-                removeCardsFromBoard(selectedCard, card);
-                if (isGameFinish()) {
-                    displayGameFinishMessage();
-                    restartGame();
-                }
-            } else {
-                selectedCard.flip();  // Flip the first card back over if it doesn't match
-                card.flip();  // Flip the second card back over
-
-                // Create a pause transition of 1 second
-                pause = new PauseTransition(Duration.seconds(1));
-
-                // Set what to do after the pause
-                pause.setOnFinished(event -> {
-                    selectedCard.flip();
-                    card.flip();
-                });
-
-                // Start the pause
-                pause.play();
-            }
-
-            selectedCard = null;
-            isPlayer1Turn = !isPlayer1Turn;  // Alternate turns between players
         }
     }
+
+    public void processCardSelection() {
+        if (cardsMatch()) {
+            scoreCurrentPlayer();
+            addToPlayerHand();
+            removeCardsFromBoard();
+            if (isGameFinish()) {
+                displayGameFinishMessage();
+                restartGame();
+            }
+        } else {
+            selectedCard1.flipBack();
+            selectedCard2.flipBack();
+        }
+        selectedCard1 = null;
+        selectedCard2 = null;
+        isPlayer1Turn = !isPlayer1Turn;  // Alternate turns between players
+    }
+
+    private void addToPlayerHand() {
+        if (isPlayer1Turn) {
+            player1Hand.add(selectedCard1);
+            player1Hand.add(selectedCard2);
+        } else {
+            player2Hand.add(selectedCard1);
+            player2Hand.add(selectedCard2);
+        }
+    }
+
     private boolean isGameFinish() {
         return gameBoard.getChildren().isEmpty();  // The game is over when there are no more cards
     }
@@ -143,9 +129,9 @@ public class GameController implements CardSelectionListener {
         System.out.println("Game Finish!");
     }
 
-    private boolean cardsMatch(Card card1, Card card2) {
+    private boolean cardsMatch() {
         // Compare the front images of the two cards to see if they match
-        return card1.getFrontImage().equals(card2.getFrontImage());
+        return selectedCard1.getFrontImage() == selectedCard2.getFrontImage();
     }
 
     private void scoreCurrentPlayer() {
@@ -156,15 +142,32 @@ public class GameController implements CardSelectionListener {
         }
     }
 
-    private void removeCardsFromBoard(Card card1, Card card2) {
-        gameBoard.getChildren().remove(card1.getRepresentation());
-        gameBoard.getChildren().remove(card2.getRepresentation());
+    private void removeCardsFromBoard() {
+        gameBoard.getChildren().remove(selectedCard1.getRepresentation());
+        gameBoard.getChildren().remove(selectedCard2.getRepresentation());
+    }
+
+    public GridPane getPlayerHandPane(Player player) {
+        GridPane handPane = new GridPane();
+        List<Card> hand = (player == scoreBoard.getPlayer1()) ? player1Hand : player2Hand;
+        for (int i = 0; i < hand.size(); i += 2) {
+            // Assume that Card has a getCopy method that returns a new Card with the same front and back images
+            handPane.add(hand.get(i).getCopy().getRepresentation(), i / 2, 0);
+            handPane.add(hand.get(i + 1).getCopy().getRepresentation(), i / 2, 1);
+        }
+        return handPane;
     }
 
     public void startGame(Stage stage) {
         VBox root = new VBox();
         root.getChildren().add(scoreBoard);
         root.getChildren().add(gameBoard);
+
+        // Visualize the cards won by players (you can customize this based on your UI design)
+        GridPane player1HandPane = getPlayerHandPane(scoreBoard.getPlayer1());
+        GridPane player2HandPane = getPlayerHandPane(scoreBoard.getPlayer2());
+        root.getChildren().addAll(new Label("Player 1's pairs:"), player1HandPane, new Label("Player 2's pairs:"), player2HandPane);
+
         Scene scene = new Scene(root);
         stage.setScene(scene);
         stage.show();
@@ -172,7 +175,8 @@ public class GameController implements CardSelectionListener {
 
     private void restartGame() {
         // Restart the game
-        selectedCard = null;
+        selectedCard1 = null;
+        selectedCard2 = null;
         isPlayer1Turn = true;
         mainController.resetGame();
     }
