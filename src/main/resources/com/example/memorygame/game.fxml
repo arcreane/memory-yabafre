@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox alignment="CENTER" spacing="10" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/11.0.1" fx:controller="com.example.memorygame.MainController">
+    <TextField fx:id="player1NameField" promptText="Player 1 Name" />
+    <TextField fx:id="player2NameField" promptText="Player 2 Name" />
+    <ComboBox fx:id="themeComboBox" promptText="Select Theme" />
+    <ComboBox fx:id="difficultyComboBox" promptText="Select Difficulty" />
+    <Button fx:id="startButton" text="Start Game" />
+</VBox>
