@@ -3,7 +3,11 @@ package com.example.memorygame;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.TextField;
 import javafx.stage.Stage;
+
+import java.awt.*;
 
 public class MainController {
 
@@ -46,5 +50,9 @@ public class MainController {
         difficultyComboBox.getSelectionModel().clearSelection();
         Stage stage = (Stage) startButton.getScene().getWindow();
         stage.setScene(startScene);
+    }
+
+    public Scene getScene() {
+        return startButton.getScene();
     }
 }

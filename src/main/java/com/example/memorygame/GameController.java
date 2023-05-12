@@ -24,6 +24,9 @@ public class GameController implements CardSelectionListener {
     private final List<Card> cards;
     private final List<Card> player1Hand = new ArrayList<>();
     private final List<Card> player2Hand = new ArrayList<>();
+    private final GridPane player1HandPane = new GridPane();
+    private final GridPane player2HandPane = new GridPane();
+    private final Label currentPlayerLabel = new Label();
     private boolean isPlayer1Turn;
 
 
@@ -45,8 +48,8 @@ public class GameController implements CardSelectionListener {
             System.out.println("i: " + i);
             System.out.println("Attempting to open resource: " + "/img/" + i + ".png");
             try {
-                Image frontImage = new Image(getClass().getResource("/img/" + i + ".png").openStream());
-                Image backImage = new Image(getClass().getResource("/img/back.png").openStream());
+                Image frontImage = new Image(getClass().getResource("/" + theme + "/" + i + ".png").openStream());
+                Image backImage = new Image(getClass().getResource("/" + theme + "/back.png").openStream());
                 Card card1 = new Card(frontImage, backImage, this);
                 Card card2 = new Card(frontImage, backImage, this);
                 cards.add(card1);
@@ -61,8 +64,8 @@ public class GameController implements CardSelectionListener {
     private void addCardsToBoard() {
         int numCards = cards.size();
         int numRows = (int) Math.sqrt(numCards);
-        double cardHeight = Math.min(500 / numRows, 100);  // Limit the height to 500 or less
-        double cardWidth = Math.min(800 / numRows, 100);  // Limit the width to 800 or less
+        double cardHeight = Math.min(800 / numRows, 100);  // Limit the height to 500 or less
+        double cardWidth = Math.min(500 / numRows, 100);  // Limit the width to 800 or less
 
         for (int i = 0; i < numRows; i++) {
             for (int j = 0; j < numRows; j++) {
@@ -86,7 +89,7 @@ public class GameController implements CardSelectionListener {
             selectedCard2.flip();
 
             // Adding a delay of 5 seconds before proceeding with the game
-            PauseTransition pause = new PauseTransition(Duration.seconds(5));
+            PauseTransition pause = new PauseTransition(Duration.seconds(2));
             pause.setOnFinished(event -> processCardSelection());
             pause.play();
         }
@@ -108,6 +111,7 @@ public class GameController implements CardSelectionListener {
         selectedCard1 = null;
         selectedCard2 = null;
         isPlayer1Turn = !isPlayer1Turn;  // Alternate turns between players
+        currentPlayerLabel.setText(isPlayer1Turn ? scoreBoard.getPlayer1().getName() : scoreBoard.getPlayer2().getName() + "'s Turn");
     }
 
     private void addToPlayerHand() {
@@ -118,6 +122,14 @@ public class GameController implements CardSelectionListener {
             player2Hand.add(selectedCard1);
             player2Hand.add(selectedCard2);
         }
+        refreshPlayerHandPanes();
+    }
+
+    private void refreshPlayerHandPanes() {
+        player1HandPane.getChildren().clear();
+        player1HandPane.getChildren().addAll(getPlayerHandPane(scoreBoard.getPlayer1()));
+        player2HandPane.getChildren().clear();
+        player2HandPane.getChildren().addAll(getPlayerHandPane(scoreBoard.getPlayer2()));
     }
 
     private boolean isGameFinish() {
@@ -151,27 +163,42 @@ public class GameController implements CardSelectionListener {
         GridPane handPane = new GridPane();
         List<Card> hand = (player == scoreBoard.getPlayer1()) ? player1Hand : player2Hand;
         for (int i = 0; i < hand.size(); i += 2) {
-            // Assume that Card has a getCopy method that returns a new Card with the same front and back images
-            handPane.add(hand.get(i).getCopy().getRepresentation(), i / 2, 0);
-            handPane.add(hand.get(i + 1).getCopy().getRepresentation(), i / 2, 1);
+            Card card1 = hand.get(i).getCopy();
+            Card card2 = hand.get(i + 1).getCopy();
+            // Adjust the size of the card based on the size of the scene.
+            double sceneWidth = mainController.getScene().getWidth();
+            double sceneHeight = mainController.getScene().getHeight();
+            double cardWidth = sceneWidth / (4 * hand.size());
+            double cardHeight = sceneHeight / (4 * hand.size());
+            card1.setSize(cardWidth, cardHeight);
+            card2.setSize(cardWidth, cardHeight);
+            handPane.add(card1.getRepresentation(), i / 2, 0);
+            handPane.add(card2.getRepresentation(), i / 2, 1);
         }
         return handPane;
     }
 
+    private String getCurrentPlayerName() {
+        return isPlayer1Turn ? scoreBoard.getPlayer1().getName() : scoreBoard.getPlayer2().getName();
+    }
+
     public void startGame(Stage stage) {
         VBox root = new VBox();
+        currentPlayerLabel.setText(getCurrentPlayerName() + " is playing");
+        root.getChildren().add(currentPlayerLabel);
         root.getChildren().add(scoreBoard);
         root.getChildren().add(gameBoard);
 
         // Visualize the cards won by players (you can customize this based on your UI design)
-        GridPane player1HandPane = getPlayerHandPane(scoreBoard.getPlayer1());
-        GridPane player2HandPane = getPlayerHandPane(scoreBoard.getPlayer2());
+        player1HandPane.getChildren().addAll(getPlayerHandPane(scoreBoard.getPlayer1()));
+        player2HandPane.getChildren().addAll(getPlayerHandPane(scoreBoard.getPlayer2()));
         root.getChildren().addAll(new Label("Player 1's pairs:"), player1HandPane, new Label("Player 2's pairs:"), player2HandPane);
 
         Scene scene = new Scene(root);
         stage.setScene(scene);
         stage.show();
     }
+
 
     private void restartGame() {
         // Restart the game
