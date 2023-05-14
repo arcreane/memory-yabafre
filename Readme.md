@@ -31,5 +31,4 @@ Ce jeu a été développé en utilisant IntelliJ IDEA. Pour lancer le projet dan
 
 Nous vous invitons à contribuer à ce projet en soumettant des problèmes ou des pull requests.
 
-## Licence
 
