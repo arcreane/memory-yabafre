@@ -33,4 +33,3 @@ Nous vous invitons à contribuer à ce projet en soumettant des problèmes ou de
 
 ## Licence
 
-Ce projet est sous licence MIT - voir le fichier [LICENSE](LICENSE) pour plus de détails.
